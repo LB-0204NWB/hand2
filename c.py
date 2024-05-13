@@ -1,6 +1,6 @@
 import cv2
 import mediapipe as mp
-
+import time
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -19,6 +19,8 @@ connection_spec = mp.solutions.drawing_utils.DrawingSpec(color=connection_color,
 
 cap = cv2.VideoCapture(0)
 
+prev_time = 0
+
 while cap.isOpened():
     success, image = cap.read()
     if not success:
@@ -28,6 +30,13 @@ while cap.isOpened():
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = hands.process(image)
 
+
+    current_time = time.time()
+    fps = 1/ (current_time - prev_time) if prev_time != 0 else 0
+    prev_time = current_time
+
+    fps_text = f"FPS: {int(fps)}"
+
     # Vẽ các điểm quan trọng của tay lên hình ảnh
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     if results.multi_hand_landmarks:
@@ -36,7 +45,7 @@ while cap.isOpened():
                 image, hand_landmarks, mp_hands.HAND_CONNECTIONS,
                 landmark_drawing_spec=point_spec,
                 connection_drawing_spec=connection_spec)
-
+    cv2.putText(image,fps_text,(30,30),cv2.FONT_HERSHEY_SIMPLEX,1,(0,200,100),2)
     cv2.imshow('MediaPipe Hands', image)
     if cv2.waitKey(5) & 0xFF == ord('q'):  # Nhấn ESC để thoát
         break
